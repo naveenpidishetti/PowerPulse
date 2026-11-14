@@ -1,0 +1,31 @@
+# Python byte-compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+**/venv/
+**/.venv/
+
+# Secrets and environment variables
+.env
+**/.env
+.secret_key
+**/.secret_key
+
+# SQLite database
+*.sqlite3
+**/db.sqlite3
+
+# Operating System & Editor artifacts
+Thumbs.db
+desktop.ini
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo

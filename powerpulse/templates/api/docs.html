@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+
+{% block title %}REST API Documentation — PowerPulse ⚡{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <!-- Header Banner -->
+  <div class="card border-0 shadow-sm p-4 mb-4" style="background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 60%, #0f172a 100%); color: #f8fafc; border-radius: 16px;">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+      <div>
+        <div class="d-inline-flex align-items-center gap-2 px-3 py-1 mb-2 rounded-pill" style="background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3);">
+          <span class="badge bg-primary text-uppercase font-monospace" style="font-size: 0.72rem;">v1.0.0</span>
+          <span class="text-info small fw-semibold">JSON RESTful API</span>
+        </div>
+        <h2 class="fw-bold mb-1">PowerPulse Developer API</h2>
+        <p class="text-light opacity-75 mb-0 small" style="max-width: 650px;">
+          Programmatic access to electricity meter readings, bulk CSV ingestion, AI consumption forecasts, dual-layer anomaly detection, and billing audits.
+        </p>
+      </div>
+      <div class="d-flex flex-wrap gap-2">
+        <a href="/api/" target="_blank" class="btn btn-outline-info btn-sm rounded-pill px-3">
+          <i class="bi bi-box-arrow-up-right me-1"></i> Raw API Root (JSON)
+        </a>
+        <a href="{% url 'core:manual' %}#chapter-9" class="btn btn-warning btn-sm rounded-pill px-3 fw-semibold">
+          <i class="bi bi-book-half me-1"></i> User Manual Guide
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- API Fundamentals Row -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="card p-3 h-100 border-0 shadow-sm" style="border-radius: 12px;">
+        <div class="d-flex align-items-center gap-2 text-primary fw-bold mb-2">
+          <i class="bi bi-globe2 fs-5"></i>
+          <span>Base Endpoint</span>
+        </div>
+        <code class="p-2 bg-light rounded text-dark small fw-semibold">http://localhost:8000/api/</code>
+        <small class="text-secondary mt-2">All requests return standard <code>application/json</code> payloads.</small>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card p-3 h-100 border-0 shadow-sm" style="border-radius: 12px;">
+        <div class="d-flex align-items-center gap-2 text-success fw-bold mb-2">
+          <i class="bi bi-shield-lock-fill fs-5"></i>
+          <span>Authentication</span>
+        </div>
+        <div class="small text-secondary">
+          Supports <b>Session Cookie</b> (automatic in browser), <b>HTTP Basic Auth</b> (<code>admin:admin123</code>), or zero-config sandbox fallback.
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card p-3 h-100 border-0 shadow-sm" style="border-radius: 12px;">
+        <div class="d-flex align-items-center gap-2 text-info fw-bold mb-2">
+          <i class="bi bi-currency-rupee fs-5"></i>
+          <span>Standard Currency</span>
+        </div>
+        <div class="small text-secondary">
+          All financial tariffs and estimated costs are standardized to <b>Indian Rupee (₹ INR)</b>.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Endpoints Accordion/Cards -->
+  <h4 class="fw-bold mb-3 d-flex align-items-center gap-2">
+    <i class="bi bi-braces-asterisk text-primary"></i> Available API Endpoints
+  </h4>
+
+  <div class="row g-4">
+    <!-- 1. GET /api/readings/ -->
+    <div class="col-12">
+      <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 14px;">
+        <div class="card-header bg-white py-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-primary px-3 py-1 font-monospace fw-bold">GET</span>
+            <code class="fs-6 text-dark fw-bold">/api/readings/</code>
+            <span class="badge bg-light text-secondary border">List Meter Readings</span>
+          </div>
+          <a href="/api/readings/?limit=5" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+            <i class="bi bi-play-fill me-1"></i> Try Live
+          </a>
+        </div>
+        <div class="card-body">
+          <p class="text-secondary small mb-3">Retrieve paginated electricity readings recorded by the user. Filterable by building name or date range.</p>
+          
+          <div class="row g-3">
+            <div class="col-lg-6">
+              <h6 class="fw-bold small text-uppercase text-secondary">Query Parameters</h6>
+              <div class="table-responsive">
+                <table class="table table-sm table-bordered small">
+                  <thead class="table-light">
+                    <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td><code>limit</code></td><td>integer</td><td>Results per page (default: 50)</td></tr>
+                    <tr><td><code>offset</code></td><td>integer</td><td>Starting index (default: 0)</td></tr>
+                    <tr><td><code>building</code></td><td>string</td><td>Filter by building name</td></tr>
+                    <tr><td><code>start_date</code></td><td>YYYY-MM-DD</td><td>Earliest reading date</td></tr>
+                    <tr><td><code>end_date</code></td><td>YYYY-MM-DD</td><td>Latest reading date</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="col-lg-6">
+              <h6 class="fw-bold small text-uppercase text-secondary">Sample 200 OK Response</h6>
+              <pre class="bg-dark text-light p-3 rounded small mb-0" style="max-height: 180px; overflow-y: auto;"><code>{
+  "status": "success",
+  "total_count": 181,
+  "results": [
+    {
+      "id": 142,
+      "reading_date": "2026-11-14",
+      "previous_reading": 16420.5,
+      "current_reading": 16458.2,
+      "consumption_kwh": 37.7,
+      "tariff_per_unit": 8.5,
+      "estimated_cost": 320.45,
+      "currency": "₹",
+      "building_name": "Main Residence"
+    }
+  ]
+}</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. POST /api/readings/ -->
+    <div class="col-12">
+      <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 14px;">
+        <div class="card-header bg-white py-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-success px-3 py-1 font-monospace fw-bold">POST</span>
+            <code class="fs-6 text-dark fw-bold">/api/readings/</code>
+            <span class="badge bg-light text-secondary border">Log New Reading</span>
+          </div>
+          <span class="text-secondary small font-monospace">Content-Type: application/json</span>
+        </div>
+        <div class="card-body">
+          <p class="text-secondary small mb-3">
+            Record a daily meter reading. The engine automatically calculates consumption (<code>Current - Previous</code>), computes cost at active tariff (₹), and runs anomaly evaluation.
+          </p>
+          <div class="row g-3">
+            <div class="col-lg-6">
+              <h6 class="fw-bold small text-uppercase text-secondary">Sample JSON Request Body</h6>
+              <pre class="bg-dark text-light p-3 rounded small mb-0"><code>{
+  "reading_date": "2026-11-15",
+  "previous_reading": 16458.2,
+  "current_reading": 16495.0,
+  "tariff_per_unit": 8.50,
+  "building_name": "HQ & Main Campus"
+}</code></pre>
+            </div>
+            <div class="col-lg-6">
+              <h6 class="fw-bold small text-uppercase text-secondary">cURL Command Snippet</h6>
+              <pre class="bg-dark text-light p-3 rounded small mb-0"><code>curl -X POST http://localhost:8000/api/readings/ \
+  -H "Content-Type: application/json" \
+  -u admin:admin123 \
+  -d '{"reading_date":"2026-11-15","current_reading":16495.0,"previous_reading":16458.2,"tariff_per_unit":8.5}'</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. POST /api/readings/upload-csv/ -->
+    <div class="col-12">
+      <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 14px;">
+        <div class="card-header bg-white py-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-success px-3 py-1 font-monospace fw-bold">POST</span>
+            <code class="fs-6 text-dark fw-bold">/api/readings/upload-csv/</code>
+            <span class="badge bg-light text-secondary border">Bulk CSV Ingestion</span>
+          </div>
+          <span class="text-secondary small font-monospace">multipart/form-data</span>
+        </div>
+        <div class="card-body">
+          <p class="text-secondary small mb-3">Upload and ingest dozens or hundreds of meter readings in a single API call.</p>
+          <div class="row g-3">
+            <div class="col-lg-6">
+              <h6 class="fw-bold small text-uppercase text-secondary">cURL File Upload Command</h6>
+              <pre class="bg-dark text-light p-3 rounded small mb-0"><code>curl -X POST http://localhost:8000/api/readings/upload-csv/ \
+  -u admin:admin123 \
+  -F "csv_file=@sample_meter_readings.csv"</code></pre>
+            </div>
+            <div class="col-lg-6">
+              <h6 class="fw-bold small text-uppercase text-secondary">200 OK Response</h6>
+              <pre class="bg-dark text-light p-3 rounded small mb-0"><code>{
+  "status": "success",
+  "message": "Successfully ingested 31 readings from CSV",
+  "created_count": 31,
+  "errors_skipped": 0,
+  "anomalies_detected": 2
+}</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. GET /api/analytics/forecast/ -->
+    <div class="col-12">
+      <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 14px;">
+        <div class="card-header bg-white py-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-primary px-3 py-1 font-monospace fw-bold">GET</span>
+            <code class="fs-6 text-dark fw-bold">/api/analytics/forecast/</code>
+            <span class="badge bg-light text-secondary border">Machine Learning Forecast</span>
+          </div>
+          <a href="/api/analytics/forecast/?horizon=7&model=rf" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+            <i class="bi bi-play-fill me-1"></i> Try Live
+          </a>
+        </div>
+        <div class="card-body">
+          <p class="text-secondary small mb-3">
+            Execute dynamic multi-step time-series forecasting. Supports <code>rf</code> (Random Forest Regressor) and <code>ridge</code> (Ridge Regression) across 7, 14, or 30 day horizons.
+          </p>
+          <div class="row g-3">
+            <div class="col-lg-6">
+              <h6 class="fw-bold small text-uppercase text-secondary">Parameters</h6>
+              <ul class="small text-secondary ps-3 mb-0">
+                <li><code>horizon</code>: Number of days forward (e.g. 7, 14, 30). Default: 7.</li>
+                <li><code>model</code>: <code>rf</code> (Random Forest) or <code>ridge</code> (Ridge Regression). Default: <code>rf</code>.</li>
+              </ul>
+            </div>
+            <div class="col-lg-6">
+              <h6 class="fw-bold small text-uppercase text-secondary">Sample Output</h6>
+              <pre class="bg-dark text-light p-3 rounded small mb-0" style="max-height: 160px; overflow-y: auto;"><code>{
+  "status": "success",
+  "model_name": "Random Forest Regressor",
+  "horizon_days": 7,
+  "rmse": 3.84,
+  "mae": 2.91,
+  "currency": "₹",
+  "forecasts": [
+    {"date": "2026-11-15", "predicted_kwh": 36.4, "estimated_cost": 309.4},
+    {"date": "2026-11-16", "predicted_kwh": 37.1, "estimated_cost": 315.35}
+  ]
+}</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. GET /api/analytics/summary/ & anomalies -->
+    <div class="col-md-6">
+      <div class="card border-0 shadow-sm h-100" style="border-radius: 14px;">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-primary px-3 py-1 font-monospace">GET</span>
+            <code class="fw-bold">/api/analytics/summary/</code>
+          </div>
+          <a href="/api/analytics/summary/" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-3">Try</a>
+        </div>
+        <div class="card-body">
+          <p class="small text-secondary mb-2">Aggregates all readings into total kWh, daily averages, min/peak load, and total cost in ₹.</p>
+          <pre class="bg-dark text-light p-3 rounded small mb-0"><code>{
+  "status": "success",
+  "total_readings": 181,
+  "total_consumption_kwh": 6432.1,
+  "average_daily_kwh": 35.54,
+  "peak_draw_kwh": 96.2,
+  "total_cost": 54672.85,
+  "currency": "₹",
+  "anomaly_alerts_count": 14
+}</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card border-0 shadow-sm h-100" style="border-radius: 14px;">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-primary px-3 py-1 font-monospace">GET</span>
+            <code class="fw-bold">/api/analytics/anomalies/</code>
+          </div>
+          <a href="/api/analytics/anomalies/" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-3">Try</a>
+        </div>
+        <div class="card-body">
+          <p class="small text-secondary mb-2">Fetches list of all flagged anomalies with diagnostic explanations and anomaly scores.</p>
+          <pre class="bg-dark text-light p-3 rounded small mb-0"><code>{
+  "status": "success",
+  "total_anomalies": 14,
+  "results": [
+    {
+      "reading_date": "2026-10-18",
+      "consumption_kwh": 96.2,
+      "anomaly_score": -0.28,
+      "reason": "Severe consumption surge: 96.20 kWh (2.7x average)"
+    }
+  ]
+}</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

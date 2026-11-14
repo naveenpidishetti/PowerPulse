@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}AI Electricity Consumption Forecasting — PowerPulse{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-4 py-4">
+  <div class="d-md-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold mb-1">AI Electricity Load Forecasting</h2>
+      <p class="text-secondary small mb-0">Multi-feature auto-regressive regression powered by Scikit-learn.</p>
+    </div>
+    <!-- Model & Horizon Configuration Form -->
+    <form method="get" class="d-flex flex-wrap gap-2 mt-3 mt-md-0 align-items-center">
+      <select name="model" class="form-select form-select-sm" style="width: auto;">
+        <option value="rf" {% if model_type == 'rf' %}selected{% endif %}>Random Forest Regressor</option>
+        <option value="linear" {% if model_type == 'linear' %}selected{% endif %}>Ridge Linear Regression</option>
+      </select>
+      <select name="horizon" class="form-select form-select-sm" style="width: auto;">
+        <option value="7" {% if horizon == 7 %}selected{% endif %}>Next 7 Days</option>
+        <option value="14" {% if horizon == 14 %}selected{% endif %}>Next 14 Days</option>
+        <option value="30" {% if horizon == 30 %}selected{% endif %}>Next 30 Days</option>
+      </select>
+      <button type="submit" class="btn btn-primary btn-sm rounded-pill px-3">
+        <i class="bi bi-arrow-repeat me-1"></i> Retrain & Forecast
+      </button>
+    </form>
+  </div>
+
+  {% if not result.success %}
+    <div class="card p-5 text-center">
+      <i class="bi bi-cpu text-secondary display-3 mb-3"></i>
+      <h4>Insufficient Data for Machine Learning</h4>
+      <p class="text-secondary small">{{ result.error }} (Currently logged: {{ result.count }} readings)</p>
+      <div class="mt-2">
+        <a href="{% url 'energy:seed_demo' %}" class="btn btn-warning rounded-pill px-4 fw-semibold">
+          <i class="bi bi-magic me-1"></i> Seed 90 Days of Synthetic Readings
+        </a>
+      </div>
+    </div>
+  {% else %}
+    <!-- Evaluation Metrics Cards -->
+    <div class="row g-3 mb-4">
+      <div class="col-sm-6 col-lg-3">
+        <div class="card p-3 stat-card h-100">
+          <span class="text-secondary small fw-semibold text-uppercase">Active Model</span>
+          <div class="fs-5 fw-bold text-dark mt-1">{{ result.model_name }}</div>
+          <small class="text-secondary mt-1">Trained on {{ result.metrics.train_size }} days</small>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <div class="card p-3 stat-card h-100">
+          <span class="text-secondary small fw-semibold text-uppercase">Model MAE</span>
+          <div class="fs-2 fw-bold text-success mt-1">&plusmn;{{ result.metrics.model_mae }} <span class="fs-6 text-muted fw-normal">kWh</span></div>
+          <small class="text-secondary mt-1">Mean Absolute Error on holdout test set</small>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <div class="card p-3 stat-card h-100">
+          <span class="text-secondary small fw-semibold text-uppercase">Model RMSE</span>
+          <div class="fs-2 fw-bold text-primary mt-1">{{ result.metrics.model_rmse }}</div>
+          <small class="text-secondary mt-1">Root Mean Squared Error</small>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <div class="card p-3 stat-card h-100">
+          <span class="text-secondary small fw-semibold text-uppercase">Accuracy Improvement</span>
+          <div class="fs-2 fw-bold text-info mt-1">{{ result.metrics.improvement_pct }}%</div>
+          <small class="text-secondary mt-1">Compared to naive baseline (MAE: {{ result.metrics.baseline_mae }})</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Combined Forecast Chart -->
+    <div class="card p-4 mb-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h5 class="fw-bold mb-0">Historical Load vs. Machine Learning Forecast</h5>
+          <small class="text-secondary">Solid line shows historical observations; dashed line shows future ML projection</small>
+        </div>
+        <div class="d-flex gap-2">
+          <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-3 py-2">Observed History</span>
+          <span class="badge bg-primary-subtle text-primary border rounded-pill px-3 py-2">ML {{ horizon }}-Day Forecast</span>
+        </div>
+      </div>
+      <div style="position: relative; height: 340px;">
+        <canvas id="forecastChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Forecasted Days Table -->
+    <div class="card p-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0">Forecast Schedule Details</h5>
+        <a href="{% url 'analytics:export_pdf' %}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+          <i class="bi bi-file-earmark-pdf me-1"></i> Export Schedule to PDF
+        </a>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Target Date</th>
+              <th>Forecasted Load</th>
+              <th>Estimated Cost</th>
+              <th>Confidence / Model</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in result.forecasts %}
+              <tr>
+                <td class="fw-bold">{{ item.date }}</td>
+                <td>
+                  <span class="fw-bold text-primary fs-6">{{ item.predicted_kwh }}</span> <small class="text-muted">kWh</small>
+                </td>
+                <td class="fw-semibold text-success">
+                  ₹{{ item.estimated_cost }}
+                </td>
+                <td>
+                  <span class="badge bg-info-subtle text-info border rounded-pill">{{ result.model_name }}</span>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if result.success %}
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const ctx = document.getElementById("forecastChart").getContext("2d");
+    
+    const histDates = {{ chart_hist_dates_json|safe }};
+    const histValues = {{ chart_hist_values_json|safe }};
+    const predDates = {{ chart_pred_dates_json|safe }};
+    const predValues = {{ chart_pred_values_json|safe }};
+
+    // Combine timeline
+    const allLabels = [...histDates, ...predDates];
+    
+    // For historical dataset: pad nulls for future dates
+    const histSeries = [...histValues, ...predDates.map(() => null)];
+    
+    // For predicted dataset: bridge the last historical value to first predicted
+    const predSeries = histDates.map((_, idx) => (idx === histDates.length - 1 ? histValues[idx] : null)).concat(predValues);
+
+    new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: allLabels,
+        datasets: [
+          {
+            label: "Historical Consumption (kWh)",
+            data: histSeries,
+            borderColor: "#475569",
+            backgroundColor: "rgba(71, 85, 105, 0.08)",
+            borderWidth: 2,
+            pointRadius: 2.5,
+            tension: 0.2,
+            fill: true
+          },
+          {
+            label: "AI Predicted Forecast (kWh)",
+            data: predSeries,
+            borderColor: "#2563eb",
+            backgroundColor: "rgba(37, 99, 235, 0.12)",
+            borderWidth: 2.5,
+            borderDash: [6, 4],
+            pointRadius: 4,
+            pointBackgroundColor: "#2563eb",
+            tension: 0.2,
+            fill: true
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: "top" }
+        },
+        scales: {
+          y: { beginAtZero: true, title: { display: true, text: "kWh" } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+  });
+</script>
+{% endif %}
+{% endblock %}
+

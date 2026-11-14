@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Register — PowerPulse{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+      <div class="card p-4 shadow-sm border-0">
+        <div class="text-center mb-4">
+          <div class="d-inline-flex p-3 rounded-circle bg-primary bg-opacity-10 text-primary mb-2">
+            <i class="bi bi-person-plus-fill fs-2"></i>
+          </div>
+          <h4 class="fw-bold">Create an Account</h4>
+          <p class="text-secondary small">Start tracking, forecasting, and optimizing your energy usage</p>
+        </div>
+
+        <form method="post">
+          {% csrf_token %}
+          {% for field in form %}
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">{{ field.label }}</label>
+              {{ field }}
+              {% if field.help_text %}
+                <div class="form-text small">{{ field.help_text }}</div>
+              {% endif %}
+              {% for error in field.errors %}
+                <div class="text-danger small mt-1">{{ error }}</div>
+              {% endfor %}
+            </div>
+          {% endfor %}
+
+          <div class="d-grid mb-3">
+            <button type="submit" class="btn btn-primary rounded-pill py-2 fw-semibold">
+              Create Account
+            </button>
+          </div>
+        </form>
+
+        <div class="text-center border-top pt-3">
+          <small class="text-secondary">
+            Already have an account? <a href="{% url 'accounts:login' %}" class="fw-semibold text-decoration-none">Sign In</a>
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

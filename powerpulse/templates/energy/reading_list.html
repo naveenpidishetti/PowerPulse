@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Electricity Meter Readings — PowerPulse{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-4 py-4">
+  <div class="d-md-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold mb-1">Electricity Meter Readings</h2>
+      <p class="text-secondary small mb-0">Total logged entries: <b>{{ total_count }}</b></p>
+    </div>
+    <div class="d-flex flex-wrap gap-2 mt-3 mt-md-0">
+      <a href="{% url 'energy:reading_create' %}" class="btn btn-primary btn-sm rounded-pill px-3">
+        <i class="bi bi-plus-lg me-1"></i> Log New Reading
+      </a>
+      <a href="{% url 'energy:reading_upload' %}" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+        <i class="bi bi-upload me-1"></i> Bulk Upload CSV
+      </a>
+      <a href="{% url 'energy:seed_demo' %}" class="btn btn-warning btn-sm rounded-pill px-3" onclick="return confirm('Generate 90 days of demo data?');">
+        <i class="bi bi-magic me-1"></i> Seed Demo Data
+      </a>
+    </div>
+  </div>
+
+  <!-- Filters Card -->
+  <div class="card p-3 mb-4 bg-white">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label small text-secondary mb-1">Filter Building</label>
+        <select name="building" class="form-select form-select-sm">
+          <option value="">All Buildings</option>
+          {% for b in buildings %}
+            <option value="{{ b }}" {% if selected_building == b %}selected{% endif %}>{{ b }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small text-secondary mb-1">Start Date</label>
+        <input type="date" name="start_date" value="{{ start_date }}" class="form-control form-control-sm">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small text-secondary mb-1">End Date</label>
+        <input type="date" name="end_date" value="{{ end_date }}" class="form-control form-control-sm">
+      </div>
+      <div class="col-md-3 d-flex gap-2">
+        <button type="submit" class="btn btn-secondary btn-sm rounded-pill px-3 flex-grow-1">
+          <i class="bi bi-funnel me-1"></i> Filter
+        </button>
+        <a href="{% url 'energy:reading_list' %}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+          Reset
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Readings Table -->
+  <div class="card p-4">
+    {% if page_obj %}
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-3">
+          <thead class="table-light">
+            <tr>
+              <th>Date</th>
+              <th>Building</th>
+              <th>Meter Reading (Prev &rarr; Curr)</th>
+              <th>Net Consumption</th>
+              <th>Tariff</th>
+              <th>Est. Cost</th>
+              <th>Source</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in page_obj %}
+              <tr>
+                <td class="fw-semibold">{{ r.reading_date|date:"Y-m-d" }}</td>
+                <td><span class="badge bg-secondary-subtle text-secondary border rounded-pill">{{ r.building_name|default:"Main" }}</span></td>
+                <td class="small text-secondary">
+                  {% if r.previous_reading and r.current_reading %}
+                    {{ r.previous_reading }} &rarr; {{ r.current_reading }}
+                  {% else %}
+                    &mdash;
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="fw-bold text-primary">{{ r.consumption_kwh }}</span> <small class="text-muted">kWh</small>
+                </td>
+                <td>{% if r.tariff_per_unit %}₹{{ r.tariff_per_unit }}{% else %}&mdash;{% endif %}</td>
+                <td class="fw-semibold">{% if r.estimated_cost %}₹{{ r.estimated_cost }}{% else %}&mdash;{% endif %}</td>
+                <td>
+                  <span class="badge bg-light text-dark border">{{ r.get_source_display }}</span>
+                </td>
+                <td class="text-end">
+                  <a href="{% url 'energy:reading_delete' r.pk %}" class="btn btn-sm btn-outline-danger py-0 px-2 rounded" title="Delete">
+                    <i class="bi bi-trash"></i>
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      {% if page_obj.has_other_pages %}
+        <nav aria-label="Page navigation" class="d-flex justify-content-center">
+          <ul class="pagination pagination-sm mb-0">
+            {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if selected_building %}&building={{ selected_building }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}">&laquo;</a>
+              </li>
+            {% endif %}
+
+            <li class="page-item disabled">
+              <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            </li>
+
+            {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if selected_building %}&building={{ selected_building }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}">&raquo;</a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      {% endif %}
+
+    {% else %}
+      <div class="text-center py-5 text-secondary">
+        <i class="bi bi-inbox display-4"></i>
+        <h5 class="mt-3">No Readings Found</h5>
+        <p class="small">Log a manual reading, import a CSV, or seed demo data.</p>
+        <a href="{% url 'energy:reading_create' %}" class="btn btn-primary btn-sm rounded-pill px-3">
+          Log Reading
+        </a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+

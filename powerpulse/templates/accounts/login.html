@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Login — PowerPulse{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-5 col-lg-4">
+      <div class="card p-4 shadow-sm border-0">
+        <div class="text-center mb-4">
+          <div class="d-inline-flex p-3 rounded-circle bg-primary bg-opacity-10 text-primary mb-2">
+            <i class="bi bi-lightning-charge-fill fs-2"></i>
+          </div>
+          <h4 class="fw-bold">Welcome Back</h4>
+          <p class="text-secondary small">Log in to your PowerPulse analytics workspace</p>
+        </div>
+
+        <form method="post">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Username</label>
+            {{ form.username }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Password</label>
+            {{ form.password }}
+          </div>
+
+          <div class="d-grid mb-3">
+            <button type="submit" class="btn btn-primary rounded-pill py-2 fw-semibold">
+              Sign In
+            </button>
+          </div>
+        </form>
+
+        <div class="text-center mb-3">
+          <span class="text-secondary small">or explore instantly without typing credentials:</span>
+        </div>
+
+        <div class="d-grid mb-3">
+          <a href="{% url 'accounts:demo_login' %}" class="btn btn-warning rounded-pill py-2 fw-semibold shadow-sm">
+            <i class="bi bi-lightning-fill me-1"></i> Quick Demo Login
+          </a>
+        </div>
+
+        <div class="text-center border-top pt-3">
+          <small class="text-secondary">
+            Don't have an account? <a href="{% url 'accounts:register' %}" class="fw-semibold text-decoration-none">Register here</a>
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,845 @@
+{% extends "base.html" %}
+
+{% block title %}PowerPulse — User Manual & Operational Handbook 📖{% endblock %}
+
+{% block extra_head %}
+<style>
+  .manual-sidebar {
+    position: sticky;
+    top: 75px;
+    max-height: calc(100vh - 90px);
+    overflow-y: auto;
+  }
+  .book-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    color: #475569;
+    font-weight: 500;
+    font-size: 0.92rem;
+    text-decoration: none;
+    transition: all 0.15s ease-in-out;
+    margin-bottom: 4px;
+    border: 1px solid transparent;
+  }
+  .book-nav-item:hover {
+    background-color: #f1f5f9;
+    color: #1e40af;
+  }
+  .book-nav-item.active {
+    background-color: #eff6ff;
+    color: #1d4ed8;
+    font-weight: 600;
+    border-color: #bfdbfe;
+  }
+  .book-nav-item .chapter-badge {
+    font-size: 0.72rem;
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #e2e8f0;
+    color: #334155;
+    font-weight: 600;
+  }
+  .book-nav-item.active .chapter-badge {
+    background: #3b82f6;
+    color: #ffffff;
+  }
+  .chapter-pane {
+    display: none;
+  }
+  .chapter-pane.active {
+    display: block;
+    animation: fadeIn 0.25s ease-in-out;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .step-number-pill {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #2563eb;
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+  }
+  .callout-box {
+    border-left: 4px solid #3b82f6;
+    background: #f8fafc;
+    border-radius: 0 12px 12px 0;
+    padding: 14px 18px;
+    margin: 16px 0;
+  }
+  .callout-warning {
+    border-left-color: #f59e0b;
+    background: #fffbeb;
+  }
+  .callout-success {
+    border-left-color: #10b981;
+    background: #ecfdf5;
+  }
+  .code-preview-box {
+    background: #0f172a;
+    color: #e2e8f0;
+    border-radius: 10px;
+    padding: 14px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.85rem;
+    overflow-x: auto;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-4 py-4">
+  <!-- Manual Header Banner -->
+  <div class="card border-0 shadow-sm p-4 mb-4" style="background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 60%, #0f172a 100%); color: #f8fafc; border-radius: 16px;">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+      <div>
+        <div class="d-inline-flex align-items-center gap-2 px-3 py-1 mb-2 rounded-pill" style="background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3);">
+          <i class="bi bi-book-half text-info"></i>
+          <span class="text-info small fw-semibold">Interactive Handbook & Guide</span>
+          <span class="badge bg-warning text-dark font-monospace" style="font-size: 0.72rem;">Beginner Friendly</span>
+        </div>
+        <h2 class="fw-bold mb-1">PowerPulse User Manual & Guidebook</h2>
+        <p class="text-light opacity-75 mb-0 small" style="max-width: 680px;">
+          Master every feature of PowerPulse — from entering your very first meter reading and bulk CSV ingestion to machine learning load forecasting and anomaly detection.
+        </p>
+      </div>
+      <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'energy:reading_upload' %}" class="btn btn-warning btn-sm rounded-pill px-3 fw-semibold shadow-sm">
+          <i class="bi bi-cloud-arrow-up-fill me-1"></i> Go to CSV Upload Center
+        </a>
+        <a href="{% url 'energy:download_sample_csv' %}" class="btn btn-outline-light btn-sm rounded-pill px-3">
+          <i class="bi bi-file-earmark-arrow-down me-1"></i> Download Sample CSV
+        </a>
+        <a href="{% url 'analytics:export_pdf' %}" class="btn btn-outline-info btn-sm rounded-pill px-3">
+          <i class="bi bi-file-earmark-pdf me-1"></i> Audit PDF
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- LEFT SIDEBAR: Table of Contents / Chapters of the Book -->
+    <div class="col-lg-4 col-xl-3">
+      <div class="card p-3 border-0 shadow-sm manual-sidebar" style="border-radius: 14px;">
+        <div class="d-flex justify-content-between align-items-center mb-2 px-2">
+          <h6 class="fw-bold text-dark text-uppercase small mb-0">
+            <i class="bi bi-journal-text text-primary me-1"></i> Table of Contents
+          </h6>
+          <span class="badge bg-primary-subtle text-primary border rounded-pill">9 Chapters</span>
+        </div>
+
+        <!-- Quick filter box -->
+        <div class="mb-3">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+            <input type="text" id="manualSearchInput" class="form-control border-start-0" placeholder="Filter chapters (e.g. CSV, tariff)...">
+          </div>
+        </div>
+
+        <nav class="nav flex-column" id="chapterNavList">
+          <a href="#ch1" class="book-nav-item active" data-chapter="ch1">
+            <span class="chapter-badge">CH 1</span>
+            <span class="flex-grow-1">Welcome & Basics</span>
+            <i class="bi bi-chevron-right small text-muted"></i>
+          </a>
+          <a href="#ch2" class="book-nav-item" data-chapter="ch2">
+            <span class="chapter-badge">CH 2</span>
+            <span class="flex-grow-1">10-Second Quickstart</span>
+            <i class="bi bi-chevron-right small text-muted"></i>
+          </a>
+          <a href="#ch3" class="book-nav-item" data-chapter="ch3">
+            <span class="chapter-badge">CH 3</span>
+            <span class="flex-grow-1">Manual Meter Readings</span>
+            <i class="bi bi-chevron-right small text-muted"></i>
+          </a>
+          <a href="#ch4" class="book-nav-item" data-chapter="ch4">
+            <span class="chapter-badge bg-warning text-dark">CH 4</span>
+            <span class="flex-grow-1 fw-bold text-primary">Bulk CSV Upload</span>
+            <i class="bi bi-star-fill small text-warning"></i>
+          </a>
+          <a href="#ch5" class="book-nav-item" data-chapter="ch5">
+            <span class="chapter-badge">CH 5</span>
+            <span class="flex-grow-1">Utility Bills & Inflation</span>
+            <i class="bi bi-chevron-right small text-muted"></i>
+          </a>
+          <a href="#ch6" class="book-nav-item" data-chapter="ch6">
+            <span class="chapter-badge">CH 6</span>
+            <span class="flex-grow-1">AI Load Forecasting</span>
+            <i class="bi bi-chevron-right small text-muted"></i>
+          </a>
+          <a href="#ch7" class="book-nav-item" data-chapter="ch7">
+            <span class="chapter-badge">CH 7</span>
+            <span class="flex-grow-1">Surge & Anomaly Radar</span>
+            <i class="bi bi-chevron-right small text-muted"></i>
+          </a>
+          <a href="#ch8" class="book-nav-item" data-chapter="ch8">
+            <span class="chapter-badge">CH 8</span>
+            <span class="flex-grow-1">Executive PDF Audits</span>
+            <i class="bi bi-chevron-right small text-muted"></i>
+          </a>
+          <a href="#ch9" class="book-nav-item" data-chapter="ch9">
+            <span class="chapter-badge">CH 9</span>
+            <span class="flex-grow-1">Developer REST API</span>
+            <i class="bi bi-chevron-right small text-muted"></i>
+          </a>
+        </nav>
+
+        <hr class="my-3 text-secondary opacity-25">
+        <div class="p-2 bg-light rounded text-center small text-secondary">
+          <i class="bi bi-info-circle text-primary me-1"></i> Click any chapter to read. Use Next/Previous buttons at the bottom.
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT CONTENT PANE: Book Chapters -->
+    <div class="col-lg-8 col-xl-9">
+      
+      <!-- CHAPTER 1: WELCOME & BASICS -->
+      <div class="chapter-pane active" id="ch1">
+        <div class="card p-4 p-md-5 border-0 shadow-sm" style="border-radius: 16px;">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="badge bg-primary-subtle text-primary border rounded-pill px-3 py-1 fw-bold">Chapter 1 of 9</span>
+            <span class="text-secondary small"><i class="bi bi-clock me-1"></i> 2 min read</span>
+          </div>
+          <h2 class="fw-bold text-dark mb-3">🌟 Welcome to PowerPulse & Electricity Basics</h2>
+          <p class="lead text-secondary mb-4">
+            PowerPulse is an intelligent electricity consumption monitoring, prediction, and anomaly detection system. It translates physical electricity meter readings into actionable financial and operational insights.
+          </p>
+
+          <h5 class="fw-bold mb-3 text-primary"><i class="bi bi-lightbulb me-1"></i> Core Electricity Concepts Explained for Beginners</h5>
+          <div class="row g-3 mb-4">
+            <div class="col-md-4">
+              <div class="p-3 bg-light rounded-3 border h-100">
+                <h6 class="fw-bold text-dark"><i class="bi bi-speedometer2 text-primary me-1"></i> Kilowatt-Hour (kWh)</h6>
+                <p class="small text-secondary mb-0">
+                  The standard unit of electrical energy. 1 kWh = 1,000 Watts used continuously for 1 hour. For instance, running a 1,000W heater for 1 hour consumes 1 kWh.
+                </p>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="p-3 bg-light rounded-3 border h-100">
+                <h6 class="fw-bold text-dark"><i class="bi bi-currency-rupee text-success me-1"></i> Tariff Rate (₹ / kWh)</h6>
+                <p class="small text-secondary mb-0">
+                  The cost charged by your electricity utility per single unit (kWh) consumed. PowerPulse defaults to <b>₹8.50 per unit</b>, and can be customized per reading.
+                </p>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="p-3 bg-light rounded-3 border h-100">
+                <h6 class="fw-bold text-dark"><i class="bi bi-calculator text-warning me-1"></i> Delta Calculation</h6>
+                <p class="small text-secondary mb-0">
+                  Cumulative meter meters only go forward. Your net consumption is simply:
+                  <br><code>Current Reading - Previous Reading = Net kWh</code>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="callout-box">
+            <h6 class="fw-bold text-primary mb-1"><i class="bi bi-check-circle-fill me-1"></i> What PowerPulse Does Automatically</h6>
+            <p class="small text-secondary mb-0">
+              When you enter or upload readings, PowerPulse immediately calculates the consumed kWh, computes the financial cost in Indian Rupees (₹), flags any unusual surges with machine learning, and feeds the time-series forecasting model.
+            </p>
+          </div>
+
+          <div class="d-flex justify-content-end mt-4 pt-3 border-top">
+            <button class="btn btn-primary rounded-pill px-4" onclick="switchChapter('ch2')">
+              Next: 10-Second Quickstart &rarr;
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHAPTER 2: QUICKSTART -->
+      <div class="chapter-pane" id="ch2">
+        <div class="card p-4 p-md-5 border-0 shadow-sm" style="border-radius: 16px;">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="badge bg-primary-subtle text-primary border rounded-pill px-3 py-1 fw-bold">Chapter 2 of 9</span>
+            <span class="text-secondary small"><i class="bi bi-clock me-1"></i> 2 min read</span>
+          </div>
+          <h2 class="fw-bold text-dark mb-3">⚡ 10-Second Quickstart & Instant Demo</h2>
+          <p class="lead text-secondary mb-4">
+            If you are evaluating PowerPulse or presenting it to others, you do not need to spend time registering or creating test data from scratch.
+          </p>
+
+          <div class="row g-4 align-items-center mb-4">
+            <div class="col-md-7">
+              <h5 class="fw-bold text-dark mb-3">Instant Demo Mode</h5>
+              <p class="text-secondary small">
+                Clicking the <b>Instant Live Demo</b> button performs all of the following in less than 2 seconds:
+              </p>
+              <ul class="text-secondary small ps-3">
+                <li class="mb-2">Automatically logs you in as an administrative evaluator.</li>
+                <li class="mb-2">Seeds <b>90 days of realistic daily consumption data</b> (complete with weekend load jumps, weekday baselines, and seasonal shifts).</li>
+                <li class="mb-2">Injects realistic real-world hardware anomalies (such as an AC compressor stuck on, an overnight EV charging spike, and holiday low usage).</li>
+                <li class="mb-2">Trains the Random Forest load predictor and generates forward 7-day forecasts.</li>
+                <li class="mb-2">Populates 3 months of utility billing statements for rate comparison.</li>
+              </ul>
+            </div>
+            <div class="col-md-5">
+              <div class="card p-4 text-center border-0 shadow-sm" style="background: #f8fafc; border-radius: 14px;">
+                <i class="bi bi-lightning-charge-fill text-warning display-4 mb-2"></i>
+                <h6 class="fw-bold mb-2">Ready to Test Now?</h6>
+                <p class="small text-secondary mb-3">Jump straight into the live dashboard with pre-seeded data.</p>
+                <a href="{% url 'accounts:demo_login' %}" class="btn btn-warning fw-semibold rounded-pill px-4 py-2 shadow-sm">
+                  <i class="bi bi-play-circle-fill me-1"></i> Launch Instant Demo
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+            <button class="btn btn-outline-secondary rounded-pill px-4" onclick="switchChapter('ch1')">
+              &larr; Previous Chapter
+            </button>
+            <button class="btn btn-primary rounded-pill px-4" onclick="switchChapter('ch3')">
+              Next: Manual Meter Readings &rarr;
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHAPTER 3: MANUAL READINGS -->
+      <div class="chapter-pane" id="ch3">
+        <div class="card p-4 p-md-5 border-0 shadow-sm" style="border-radius: 16px;">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="badge bg-primary-subtle text-primary border rounded-pill px-3 py-1 fw-bold">Chapter 3 of 9</span>
+            <span class="text-secondary small"><i class="bi bi-clock me-1"></i> 3 min read</span>
+          </div>
+          <h2 class="fw-bold text-dark mb-3">📝 How to Log Daily Meter Readings</h2>
+          <p class="lead text-secondary mb-4">
+            If you inspect your electricity meter daily or weekly, logging readings in PowerPulse takes under 15 seconds.
+          </p>
+
+          <div class="d-flex align-items-start gap-3 mb-4">
+            <div class="step-number-pill">1</div>
+            <div>
+              <h5 class="fw-bold mb-1">Navigate to the Log Form</h5>
+              <p class="text-secondary small mb-2">
+                Click <b>Readings</b> in the navigation bar, then click the blue <b>"+ Log Reading"</b> button.
+              </p>
+              <a href="{% url 'energy:reading_create' %}" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                <i class="bi bi-box-arrow-up-right me-1"></i> Open Log Reading Form
+              </a>
+            </div>
+          </div>
+
+          <div class="d-flex align-items-start gap-3 mb-4">
+            <div class="step-number-pill">2</div>
+            <div>
+              <h5 class="fw-bold mb-1">Enter Reading Details</h5>
+              <p class="text-secondary small mb-2">You have two easy options:</p>
+              <div class="row g-2 mb-2">
+                <div class="col-md-6">
+                  <div class="p-3 bg-light rounded border">
+                    <span class="badge bg-primary mb-2">Recommended</span>
+                    <h6 class="fw-bold text-dark mb-1">Meter Digits Method</h6>
+                    <p class="small text-secondary mb-0">Enter the <b>Previous Reading</b> (prefilled automatically from your last entry) and the <b>Current Reading</b>. Net kWh is calculated automatically.</p>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="p-3 bg-light rounded border">
+                    <span class="badge bg-secondary mb-2">Alternative</span>
+                    <h6 class="fw-bold text-dark mb-1">Direct Net Units Method</h6>
+                    <p class="small text-secondary mb-0">If your sub-meter or smart plug already tells you that you consumed 35.5 kWh today, simply type <code>35.5</code> directly into <b>Net Consumption (kWh)</b>.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex align-items-start gap-3 mb-4">
+            <div class="step-number-pill">3</div>
+            <div>
+              <h5 class="fw-bold mb-1">Confirm Tariff Rate & Facility</h5>
+              <p class="text-secondary small mb-0">
+                Check the <b>Tariff Rate (₹ per kWh)</b> (defaults to 8.50) and select or type your <b>Building / Facility Name</b> (e.g. "Main Residence", "Floor 2", "Workshop"). Click <b>Save Reading Record</b>.
+              </p>
+            </div>
+          </div>
+
+          <div class="callout-box callout-warning">
+            <h6 class="fw-bold text-warning-emphasis mb-1"><i class="bi bi-exclamation-triangle-fill me-1"></i> Validation Guard</h6>
+            <p class="small text-secondary mb-0">
+              PowerPulse prevents human typing mistakes: your <b>Current Reading</b> cannot be lower than the <b>Previous Reading</b>. If entered incorrectly, the form alerts you before saving.
+            </p>
+          </div>
+
+          <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+            <button class="btn btn-outline-secondary rounded-pill px-4" onclick="switchChapter('ch2')">
+              &larr; Previous Chapter
+            </button>
+            <button class="btn btn-primary rounded-pill px-4" onclick="switchChapter('ch4')">
+              Next: Bulk CSV Upload Guide &rarr;
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHAPTER 4: BULK CSV UPLOAD GUIDE (THE CORE USER ASK) -->
+      <div class="chapter-pane" id="ch4">
+        <div class="card p-4 p-md-5 border-0 shadow-sm" style="border-radius: 16px; border: 2px solid #bfdbfe !important;">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="badge bg-warning text-dark border rounded-pill px-3 py-1 fw-bold">Chapter 4 of 9 — Ingestion Center</span>
+            <span class="text-secondary small"><i class="bi bi-clock me-1"></i> 3 min read</span>
+          </div>
+          <h2 class="fw-bold text-dark mb-2">📂 The Complete Guide to Bulk CSV Upload</h2>
+          <p class="lead text-secondary mb-4">
+            This chapter shows <b>exactly where and how to upload historical electricity readings</b> so the platform can instantly analyze, forecast, and detect anomalies.
+          </p>
+
+          <!-- Action buttons hero in chapter -->
+          <div class="p-4 mb-4 rounded-3 text-white" style="background: linear-gradient(135deg, #1d4ed8 0%, #0284c7 100%);">
+            <div class="row align-items-center g-3">
+              <div class="col-md-8">
+                <h4 class="fw-bold mb-1"><i class="bi bi-cloud-arrow-up-fill me-2"></i> Ready to Upload Your CSV File?</h4>
+                <p class="mb-0 small opacity-90">
+                  Head directly to the Upload Center or download our pre-formatted sample file to see the exact structure.
+                </p>
+              </div>
+              <div class="col-md-4 text-md-end">
+                <a href="{% url 'energy:reading_upload' %}" class="btn btn-light fw-bold rounded-pill px-4 py-2 shadow-sm text-primary mb-2 mb-md-0 d-block d-md-inline-block">
+                  <i class="bi bi-box-arrow-up-right me-1"></i> Go to CSV Upload
+                </a>
+                <a href="{% url 'energy:download_sample_csv' %}" class="btn btn-outline-light rounded-pill px-3 py-2 ms-md-2 d-block d-md-inline-block mt-2 mt-md-0">
+                  <i class="bi bi-download me-1"></i> Sample CSV
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <h5 class="fw-bold text-dark mb-3"><i class="bi bi-geo-alt-fill text-danger me-1"></i> Where is the CSV Upload Feature Located?</h5>
+          <ol class="text-secondary small ps-3 mb-4">
+            <li class="mb-2">Log in to your PowerPulse account (or click <b>Instant Demo</b>).</li>
+            <li class="mb-2">In the top navigation menu, click on <b>Readings</b>.</li>
+            <li class="mb-2">At the top right of the Readings table, click the blue button labeled <b>"Upload CSV"</b> (or directly open <a href="{% url 'energy:reading_upload' %}"><code>/energy/readings/upload/</code></a>).</li>
+            <li class="mb-2">Choose your <code>.csv</code> file and click <b>Upload & Process CSV</b>.</li>
+          </ol>
+
+          <h5 class="fw-bold text-dark mb-3"><i class="bi bi-table text-primary me-1"></i> Supported CSV Columns & Format Reference</h5>
+          <p class="text-secondary small mb-3">
+            PowerPulse is flexible and accepts standard CSV files exported from utility portals, smart sub-meters, Excel, or Google Sheets. The table below lists the recognized columns:
+          </p>
+
+          <div class="table-responsive mb-4">
+            <table class="table table-bordered table-sm small align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Column Name</th>
+                  <th>Aliases Accepted</th>
+                  <th>Required?</th>
+                  <th>Format / Example</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>reading_date</code></td>
+                  <td><code>date</code></td>
+                  <td><span class="badge bg-danger">Required</span></td>
+                  <td><code>2026-10-01</code> or <code>01-10-2026</code></td>
+                  <td>YYYY-MM-DD or DD-MM-YYYY formats supported.</td>
+                </tr>
+                <tr>
+                  <td><code>consumption_kwh</code></td>
+                  <td><code>kwh</code>, <code>units</code></td>
+                  <td><span class="badge bg-info text-dark">Conditional</span></td>
+                  <td><code>34.70</code></td>
+                  <td>Net units consumed. If omitted, calculated from Current - Prev.</td>
+                </tr>
+                <tr>
+                  <td><code>previous_reading</code></td>
+                  <td><code>prev</code></td>
+                  <td><span class="badge bg-secondary">Optional</span></td>
+                  <td><code>10240.50</code></td>
+                  <td>Opening meter reading for the date.</td>
+                </tr>
+                <tr>
+                  <td><code>current_reading</code></td>
+                  <td><code>curr</code></td>
+                  <td><span class="badge bg-secondary">Optional</span></td>
+                  <td><code>10275.20</code></td>
+                  <td>Closing meter reading for the date.</td>
+                </tr>
+                <tr>
+                  <td><code>tariff_per_unit</code></td>
+                  <td><code>tariff</code></td>
+                  <td><span class="badge bg-secondary">Optional</span></td>
+                  <td><code>8.50</code></td>
+                  <td>Tariff in Indian Rupees (₹). Defaults to 8.50 if omitted.</td>
+                </tr>
+                <tr>
+                  <td><code>building_name</code></td>
+                  <td><code>building</code></td>
+                  <td><span class="badge bg-secondary">Optional</span></td>
+                  <td><code>Main Campus</code></td>
+                  <td>Building or facility name. Defaults to "Main".</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h5 class="fw-bold text-dark mb-2"><i class="bi bi-file-earmark-code text-success me-1"></i> Example of a Perfect CSV File</h5>
+          <p class="text-secondary small mb-2">Here is what the inside of your CSV file should look like:</p>
+          
+          <div class="code-preview-box mb-4">
+reading_date,previous_reading,current_reading,consumption_kwh,tariff_per_unit,building_name
+2026-10-01,10240.50,10275.20,34.70,8.50,Main Campus
+2026-10-02,10275.20,10311.80,36.60,8.50,Main Campus
+2026-10-03,10311.80,10349.50,37.70,8.50,Main Campus
+2026-10-04,10349.50,10393.10,43.60,8.50,Main Campus
+2026-10-05,10393.10,10438.40,45.30,8.50,Main Campus
+          </div>
+
+          <div class="callout-box callout-success mb-4">
+            <h6 class="fw-bold text-success-emphasis mb-1"><i class="bi bi-magic me-1"></i> What Happens Right After Ingestion?</h6>
+            <ol class="small text-secondary ps-3 mb-0">
+              <li><b>De-duplication:</b> If a reading already exists for that date and facility, it is safely updated rather than duplicated.</li>
+              <li><b>Instant Cost Calculation:</b> Multiplies kWh by the ₹ tariff to compute estimated cost.</li>
+              <li><b>Auto-Anomaly Scan:</b> Evaluates every uploaded reading against historical distributions to flag surges immediately.</li>
+              <li><b>Model Ready:</b> Navigate to <b>AI Forecast</b> to train a projection on your new data.</li>
+            </ol>
+          </div>
+
+          <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+            <button class="btn btn-outline-secondary rounded-pill px-4" onclick="switchChapter('ch3')">
+              &larr; Previous Chapter
+            </button>
+            <button class="btn btn-primary rounded-pill px-4" onclick="switchChapter('ch5')">
+              Next: Utility Bills & Inflation &rarr;
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHAPTER 5: BILLS -->
+      <div class="chapter-pane" id="ch5">
+        <div class="card p-4 p-md-5 border-0 shadow-sm" style="border-radius: 16px;">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="badge bg-primary-subtle text-primary border rounded-pill px-3 py-1 fw-bold">Chapter 5 of 9</span>
+            <span class="text-secondary small"><i class="bi bi-clock me-1"></i> 2 min read</span>
+          </div>
+          <h2 class="fw-bold text-dark mb-3">🧾 Utility Bills & Auditing Rate Inflation</h2>
+          <p class="lead text-secondary mb-4">
+            Most people only look at the total amount on their monthly electricity bill. PowerPulse audits the <b>effective cost per unit</b> to reveal stealthy utility tariff increases.
+          </p>
+
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <div class="p-3 bg-light rounded-3 border h-100">
+                <h6 class="fw-bold text-dark"><i class="bi bi-receipt text-primary me-1"></i> Recording a Monthly Bill</h6>
+                <p class="small text-secondary mb-2">
+                  When your utility company delivers your monthly statement, navigate to <b>Bills &rarr; + Add Monthly Bill</b>. Enter:
+                </p>
+                <ul class="small text-secondary ps-3 mb-0">
+                  <li><b>Billing Month:</b> Any date in the billing cycle (e.g. Oct 2026).</li>
+                  <li><b>Units Consumed:</b> Total kWh billed by the company.</li>
+                  <li><b>Total Bill Amount (₹):</b> Total final payable amount.</li>
+                </ul>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="p-3 bg-light rounded-3 border h-100">
+                <h6 class="fw-bold text-dark"><i class="bi bi-graph-up-arrow text-danger me-1"></i> Effective Rate Detection</h6>
+                <p class="small text-secondary mb-2">
+                  The system calculates:
+                  <br><code>Effective Cost / Unit = Bill Amount (₹) / Units Billed</code>
+                </p>
+                <p class="small text-secondary mb-0">
+                  If your usage remained constant at 1,000 kWh, but your cost-per-unit jumped from ₹8.50 to ₹9.80, PowerPulse makes that inflation visible at a glance.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+            <button class="btn btn-outline-secondary rounded-pill px-4" onclick="switchChapter('ch4')">
+              &larr; Previous Chapter
+            </button>
+            <button class="btn btn-primary rounded-pill px-4" onclick="switchChapter('ch6')">
+              Next: AI Load Forecasting &rarr;
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHAPTER 6: AI FORECAST -->
+      <div class="chapter-pane" id="ch6">
+        <div class="card p-4 p-md-5 border-0 shadow-sm" style="border-radius: 16px;">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="badge bg-primary-subtle text-primary border rounded-pill px-3 py-1 fw-bold">Chapter 6 of 9</span>
+            <span class="text-secondary small"><i class="bi bi-clock me-1"></i> 3 min read</span>
+          </div>
+          <h2 class="fw-bold text-dark mb-3">🤖 AI Consumption Forecasting</h2>
+          <p class="lead text-secondary mb-4">
+            Plan budgets and identify unusual future consumption with PowerPulse's time-series regression engine.
+          </p>
+
+          <h5 class="fw-bold text-dark mb-3">How the Machine Learning Engine Works</h5>
+          <p class="text-secondary small mb-3">
+            Unlike basic averages, the predictor engineers rich temporal features from your recorded data:
+          </p>
+          <div class="row g-2 mb-4">
+            <div class="col-md-4">
+              <div class="p-3 bg-light rounded border h-100">
+                <span class="badge bg-primary mb-1">Calendar Signals</span>
+                <p class="small text-secondary mb-0">Day of week, day of month, month, and weekend status capture recurring weekly habits.</p>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="p-3 bg-light rounded border h-100">
+                <span class="badge bg-info text-dark mb-1">Auto-Regressive Lags</span>
+                <p class="small text-secondary mb-0">Lag 1 (yesterday), Lag 2 (2 days ago), and Lag 7 (same day last week) track sequential inertia.</p>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="p-3 bg-light rounded border h-100">
+                <span class="badge bg-success mb-1">Rolling Averages</span>
+                <p class="small text-secondary mb-0">7-day moving window smooths random daily noise to reveal underlying facility trajectory.</p>
+              </div>
+            </div>
+          </div>
+
+          <h5 class="fw-bold text-dark mb-2">Model Options & Accuracy Scorecards</h5>
+          <ul class="text-secondary small ps-3 mb-4">
+            <li class="mb-2"><b>Random Forest Regressor (Default):</b> Captures complex non-linear equipment interactions and surge boundaries.</li>
+            <li class="mb-2"><b>Ridge Regression:</b> L2-regularized linear model that provides a fast, stable baseline.</li>
+            <li class="mb-2"><b>RMSE (Root Mean Squared Error):</b> Penalizes large errors heavily; lower is better.</li>
+            <li class="mb-2"><b>MAE (Mean Absolute Error):</b> Average expected deviation in kWh (e.g. 2.9 kWh).</li>
+          </ul>
+
+          <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+            <button class="btn btn-outline-secondary rounded-pill px-4" onclick="switchChapter('ch5')">
+              &larr; Previous Chapter
+            </button>
+            <button class="btn btn-primary rounded-pill px-4" onclick="switchChapter('ch7')">
+              Next: Surge & Anomaly Radar &rarr;
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHAPTER 7: ANOMALY RADAR -->
+      <div class="chapter-pane" id="ch7">
+        <div class="card p-4 p-md-5 border-0 shadow-sm" style="border-radius: 16px;">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="badge bg-primary-subtle text-primary border rounded-pill px-3 py-1 fw-bold">Chapter 7 of 9</span>
+            <span class="text-secondary small"><i class="bi bi-clock me-1"></i> 2 min read</span>
+          </div>
+          <h2 class="fw-bold text-dark mb-3">🛡️ Surge & Anomaly Detection</h2>
+          <p class="lead text-secondary mb-4">
+            Unflagged equipment malfunctions (like faulty AC thermostats, water heater leaks, or industrial compressors stuck running overnight) waste huge amounts of electricity.
+          </p>
+
+          <h5 class="fw-bold text-dark mb-3">The Dual-Layer Detection Strategy</h5>
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <div class="p-3 bg-light rounded border h-100">
+                <h6 class="fw-bold text-danger"><i class="bi bi-diagram-3-fill me-1"></i> Layer 1 — Isolation Forest</h6>
+                <p class="small text-secondary mb-0">
+                  An unsupervised ensemble algorithm that builds isolation decision trees. Points requiring unusually few splits to isolate are classified as anomalous spikes.
+                </p>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="p-3 bg-light rounded border h-100">
+                <h6 class="fw-bold text-danger"><i class="bi bi-calculator me-1"></i> Layer 2 — 2.5σ Statistical Limits</h6>
+                <p class="small text-secondary mb-0">
+                  Calculates rolling mean and standard deviation. Any single day exceeding 2.5 standard deviations from the user's historical baseline triggers an immediate red flag.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <h5 class="fw-bold text-dark mb-2">Diagnostic Attribution</h5>
+          <p class="text-secondary small mb-3">
+            PowerPulse doesn't just display a warning number; it translates mathematical outliers into human-readable diagnostics:
+          </p>
+          <div class="p-3 bg-light rounded border small text-dark mb-4 font-monospace">
+            • "Severe consumption surge: 96.20 kWh (2.7x user average)"<br>
+            • "Significant load spike: 88.40 kWh (2.5x user average)"<br>
+            • "Abnormally low consumption: 7.10 kWh (Possible vacancy or sub-meter disconnection)"
+          </div>
+
+          <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+            <button class="btn btn-outline-secondary rounded-pill px-4" onclick="switchChapter('ch6')">
+              &larr; Previous Chapter
+            </button>
+            <button class="btn btn-primary rounded-pill px-4" onclick="switchChapter('ch8')">
+              Next: Executive PDF Audits &rarr;
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHAPTER 8: PDF AUDITS -->
+      <div class="chapter-pane" id="ch8">
+        <div class="card p-4 p-md-5 border-0 shadow-sm" style="border-radius: 16px;">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="badge bg-primary-subtle text-primary border rounded-pill px-3 py-1 fw-bold">Chapter 8 of 9</span>
+            <span class="text-secondary small"><i class="bi bi-clock me-1"></i> 2 min read</span>
+          </div>
+          <h2 class="fw-bold text-dark mb-3">📄 Exporting Executive PDF Audit Reports</h2>
+          <p class="lead text-secondary mb-4">
+            Energy auditors, facility managers, and home owners often need to submit official documentation to management or utility boards.
+          </p>
+
+          <div class="row g-4 align-items-center mb-4">
+            <div class="col-md-7">
+              <h5 class="fw-bold text-dark mb-2">What is Included in the Generated PDF?</h5>
+              <ul class="text-secondary small ps-3">
+                <li class="mb-2"><b>Official Header:</b> Document timestamp, user credentials, and confidentiality markers.</li>
+                <li class="mb-2"><b>KPI Scorecards:</b> Total energy consumed (kWh), daily average draw, peak surge, and cumulative spend in ₹.</li>
+                <li class="mb-2"><b>7-Day Machine Learning Load Forecast:</b> Target dates, predicted kWh, estimated cost in ₹, and model RMSE/MAE confidence scores.</li>
+                <li class="mb-2"><b>Recent Detected Anomalies Log:</b> Dates, observed surge kWh, anomaly scores, and full diagnostic reasons.</li>
+              </ul>
+            </div>
+            <div class="col-md-5">
+              <div class="card p-4 text-center border-0 shadow-sm" style="background: #eff6ff; border-radius: 14px;">
+                <i class="bi bi-file-earmark-pdf-fill text-danger display-4 mb-2"></i>
+                <h6 class="fw-bold mb-2">Download Official Report</h6>
+                <p class="small text-secondary mb-3">Generated dynamically using Python ReportLab engine.</p>
+                <a href="{% url 'analytics:export_pdf' %}" class="btn btn-primary fw-semibold rounded-pill px-4 py-2 shadow-sm">
+                  <i class="bi bi-download me-1"></i> Export PDF Audit Now
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+            <button class="btn btn-outline-secondary rounded-pill px-4" onclick="switchChapter('ch7')">
+              &larr; Previous Chapter
+            </button>
+            <button class="btn btn-primary rounded-pill px-4" onclick="switchChapter('ch9')">
+              Next: Developer REST API &rarr;
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHAPTER 9: REST API GUIDE -->
+      <div class="chapter-pane" id="ch9">
+        <div class="card p-4 p-md-5 border-0 shadow-sm" style="border-radius: 16px;">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="badge bg-primary-subtle text-primary border rounded-pill px-3 py-1 fw-bold">Chapter 9 of 9</span>
+            <span class="text-secondary small"><i class="bi bi-clock me-1"></i> 3 min read</span>
+          </div>
+          <h2 class="fw-bold text-dark mb-3">💻 Developer REST API Guide</h2>
+          <p class="lead text-secondary mb-4">
+            Seamlessly integrate IoT smart meters, microcontrollers, mobile apps, or automated cron jobs with PowerPulse via JSON endpoints.
+          </p>
+
+          <div class="d-flex flex-wrap gap-2 mb-4">
+            <a href="{% url 'api:docs' %}" class="btn btn-primary rounded-pill px-3 py-2 fw-semibold">
+              <i class="bi bi-terminal me-1"></i> Open Interactive API Documentation & Console
+            </a>
+            <a href="/api/" target="_blank" class="btn btn-outline-secondary rounded-pill px-3 py-2">
+              <i class="bi bi-box-arrow-up-right me-1"></i> View Live Root JSON
+            </a>
+          </div>
+
+          <h5 class="fw-bold text-dark mb-3">Quick cURL Integration Recipes</h5>
+
+          <div class="mb-3">
+            <h6 class="fw-bold small text-secondary text-uppercase">1. Fetch Latest Readings List</h6>
+            <div class="code-preview-box">curl -X GET http://localhost:8000/api/readings/?limit=5 -u admin:admin123</div>
+          </div>
+
+          <div class="mb-3">
+            <h6 class="fw-bold small text-secondary text-uppercase">2. Log a Reading from Smart Meter (IoT)</h6>
+            <div class="code-preview-box">curl -X POST http://localhost:8000/api/readings/ \
+  -H "Content-Type: application/json" \
+  -u admin:admin123 \
+  -d '{"reading_date":"2026-11-15","previous_reading":16458.2,"current_reading":16495.0,"tariff_per_unit":8.50}'</div>
+          </div>
+
+          <div class="mb-3">
+            <h6 class="fw-bold small text-secondary text-uppercase">3. Get 7-Day Machine Learning Load Forecast</h6>
+            <div class="code-preview-box">curl -X GET "http://localhost:8000/api/analytics/forecast/?horizon=7&model=rf" -u admin:admin123</div>
+          </div>
+
+          <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+            <button class="btn btn-outline-secondary rounded-pill px-4" onclick="switchChapter('ch8')">
+              &larr; Previous Chapter
+            </button>
+            <a href="{% url 'core:dashboard' %}" class="btn btn-success rounded-pill px-4">
+              <i class="bi bi-speedometer2 me-1"></i> Return to Dashboard
+            </a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function switchChapter(chapterId) {
+    // Hide all chapter panes
+    document.querySelectorAll('.chapter-pane').forEach(el => el.classList.remove('active'));
+    // Deactivate all nav items
+    document.querySelectorAll('.book-nav-item').forEach(el => el.classList.remove('active'));
+
+    // Activate selected pane
+    const targetPane = document.getElementById(chapterId);
+    if (targetPane) {
+      targetPane.classList.add('active');
+    }
+
+    // Activate corresponding nav item
+    const targetNav = document.querySelector(`.book-nav-item[data-chapter="${chapterId}"]`);
+    if (targetNav) {
+      targetNav.classList.add('active');
+    }
+
+    // Update URL hash without jumping page
+    history.replaceState(null, null, `#${chapterId}`);
+    window.scrollTo({ top: 120, behavior: 'smooth' });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // Check if URL hash exists
+    const hash = window.location.hash.replace('#', '');
+    if (hash && document.getElementById(hash)) {
+      switchChapter(hash);
+    }
+
+    // Sidebar navigation clicks
+    document.querySelectorAll('.book-nav-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        const ch = item.getAttribute('data-chapter');
+        switchChapter(ch);
+      });
+    });
+
+    // Real-time chapter search filter
+    const searchInput = document.getElementById('manualSearchInput');
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        document.querySelectorAll('.book-nav-item').forEach(item => {
+          const text = item.textContent.toLowerCase();
+          if (!query || text.includes(query)) {
+            item.style.display = 'flex';
+          } else {
+            item.style.display = 'none';
+          }
+        });
+      });
+    }
+  });
+</script>
+{% endblock %}

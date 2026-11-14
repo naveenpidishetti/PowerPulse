@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — PowerPulse{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-4 py-4">
+  <!-- Top Bar -->
+  <div class="d-md-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold mb-1">Energy Intelligence Dashboard</h2>
+      <p class="text-secondary small mb-0">Overview of power metrics, machine learning forecasts, and system alerts.</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2 mt-3 mt-md-0">
+      <a href="{% url 'energy:seed_demo' %}" class="btn btn-warning btn-sm rounded-pill px-3 shadow-sm" onclick="return confirm('Seed 90 days of synthetic demo readings and train ML models?');">
+        <i class="bi bi-magic me-1"></i> Seed Demo Data
+      </a>
+      <a href="{% url 'energy:reading_create' %}" class="btn btn-primary btn-sm rounded-pill px-3">
+        <i class="bi bi-plus-lg me-1"></i> Log Reading
+      </a>
+      <a href="{% url 'energy:reading_upload' %}" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+        <i class="bi bi-upload me-1"></i> Upload CSV
+      </a>
+      <a href="{% url 'analytics:export_pdf' %}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+        <i class="bi bi-download me-1"></i> Export PDF
+      </a>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+      <div class="card p-3 stat-card h-100">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="text-secondary small fw-semibold text-uppercase">30-Day Consumption</span>
+          <span class="badge bg-primary-subtle text-primary p-2 rounded-circle"><i class="bi bi-lightning-charge fs-5"></i></span>
+        </div>
+        <div class="fs-2 fw-bold text-dark">{{ kwh_30d }} <span class="fs-6 text-muted fw-normal">kWh</span></div>
+        <div class="text-secondary small mt-1">
+          Daily average: <b>{{ daily_avg_30d }} kWh</b>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+      <div class="card p-3 stat-card h-100">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="text-secondary small fw-semibold text-uppercase">30-Day Estimated Cost</span>
+          <span class="badge bg-success-subtle text-success p-2 rounded-circle"><i class="bi bi-currency-rupee fs-5"></i></span>
+        </div>
+        <div class="fs-2 fw-bold text-dark">₹{{ cost_30d }}</div>
+        <div class="text-secondary small mt-1">
+          Based on logged tariff rates
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+      <div class="card p-3 stat-card h-100">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="text-secondary small fw-semibold text-uppercase">Next 7-Day AI Forecast</span>
+          <span class="badge bg-info-subtle text-info p-2 rounded-circle"><i class="bi bi-cpu fs-5"></i></span>
+        </div>
+        <div class="fs-2 fw-bold text-info">{{ predicted_next_7d_kwh }} <span class="fs-6 text-muted fw-normal">kWh</span></div>
+        <div class="text-secondary small mt-1">
+          <a href="{% url 'analytics:predict' %}" class="text-decoration-none">View ML projection details &rarr;</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+      <div class="card p-3 stat-card h-100">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="text-secondary small fw-semibold text-uppercase">Flagged Anomalies</span>
+          <span class="badge bg-danger-subtle text-danger p-2 rounded-circle"><i class="bi bi-exclamation-octagon fs-5"></i></span>
+        </div>
+        <div class="fs-2 fw-bold {% if anomalies_count > 0 %}text-danger{% else %}text-success{% endif %}">
+          {{ anomalies_count }}
+        </div>
+        <div class="text-secondary small mt-1">
+          <a href="{% url 'analytics:anomalies' %}" class="text-decoration-none">Review alert patterns &rarr;</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Chart & Anomaly Feed Row -->
+  <div class="row g-4 mb-4">
+    <!-- Chart Column -->
+    <div class="col-xl-8">
+      <div class="card p-4 h-100">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <h5 class="fw-bold mb-0">Electricity Consumption Trend</h5>
+            <small class="text-secondary">Historical daily usage (kWh) over the last 30 readings</small>
+          </div>
+          <span class="badge bg-light text-dark border">Daily kWh</span>
+        </div>
+        {% if total_readings_count == 0 %}
+          <div class="text-center py-5 my-auto">
+            <i class="bi bi-bar-chart-line text-secondary display-3"></i>
+            <h5 class="mt-3">No reading data recorded yet</h5>
+            <p class="text-secondary small">Seed sample demo data or enter meter readings to generate live interactive charts.</p>
+            <a href="{% url 'energy:seed_demo' %}" class="btn btn-warning btn-sm rounded-pill px-4 fw-semibold">
+              <i class="bi bi-magic me-1"></i> Seed 90 Days of Demo Data
+            </a>
+          </div>
+        {% else %}
+          <div style="position: relative; height: 320px;">
+            <canvas id="consumptionChart"></canvas>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Anomaly & Quick Alerts Column -->
+    <div class="col-xl-4">
+      <div class="card p-4 h-100">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="fw-bold mb-0">Anomaly Alerts</h5>
+          <a href="{% url 'analytics:anomalies' %}" class="small text-decoration-none">View All</a>
+        </div>
+
+        {% if recent_anomalies %}
+          <div class="list-group list-group-flush">
+            {% for alert in recent_anomalies %}
+              <div class="list-group-item px-0 py-2 border-bottom">
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="badge badge-anomaly rounded-pill">{{ alert.reading_date|date:"M d, Y" }}</span>
+                  <span class="fw-bold text-danger">{{ alert.consumption_kwh }} kWh</span>
+                </div>
+                <div class="small text-secondary mt-1">
+                  {{ alert.reason }}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="text-center py-4 my-auto text-secondary">
+            <i class="bi bi-check-circle-fill text-success fs-1"></i>
+            <h6 class="mt-2 text-dark fw-bold">All Readings Normal</h6>
+            <p class="small mb-0">No surge patterns or statistical outliers flagged.</p>
+          </div>
+        {% endif %}
+
+        <div class="mt-4 pt-3 border-top">
+          <div class="d-grid">
+            <a href="{% url 'analytics:run_scan' %}" class="btn btn-outline-danger btn-sm rounded-pill">
+              <i class="bi bi-search me-1"></i> Run Instant Anomaly Scan
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Readings Table -->
+  <div class="card p-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h5 class="fw-bold mb-0">Recent Meter Readings</h5>
+        <small class="text-secondary">Latest logged records for {{ user.username }}</small>
+      </div>
+      <a href="{% url 'energy:reading_list' %}" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+        View All ({{ total_readings_count }})
+      </a>
+    </div>
+
+    {% if recent_readings %}
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Date</th>
+              <th>Building</th>
+              <th>Meter (Prev &rarr; Curr)</th>
+              <th>Net Consumption</th>
+              <th>Tariff</th>
+              <th>Est. Cost</th>
+              <th>Source</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in recent_readings %}
+              <tr>
+                <td class="fw-semibold">{{ r.reading_date|date:"Y-m-d" }}</td>
+                <td><span class="badge bg-secondary-subtle text-secondary border rounded-pill">{{ r.building_name|default:"Main" }}</span></td>
+                <td class="small text-secondary">
+                  {% if r.previous_reading and r.current_reading %}
+                    {{ r.previous_reading }} &rarr; {{ r.current_reading }}
+                  {% else %}
+                    &mdash;
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="fw-bold text-primary">{{ r.consumption_kwh }}</span> <small class="text-muted">kWh</small>
+                </td>
+                <td>{% if r.tariff_per_unit %}₹{{ r.tariff_per_unit }}{% else %}&mdash;{% endif %}</td>
+                <td class="fw-semibold">{% if r.estimated_cost %}₹{{ r.estimated_cost }}{% else %}&mdash;{% endif %}</td>
+                <td>
+                  <span class="badge bg-light text-dark border">{{ r.get_source_display }}</span>
+                </td>
+                <td class="text-end">
+                  <a href="{% url 'energy:reading_delete' r.pk %}" class="btn btn-sm btn-outline-danger py-0 px-2 rounded">
+                    <i class="bi bi-trash"></i>
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="text-center py-4 text-secondary">
+        <p class="mb-0">No meter readings logged yet.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if total_readings_count > 0 %}
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const ctx = document.getElementById("consumptionChart").getContext("2d");
+    const labels = {{ chart_dates_json|safe }};
+    const values = {{ chart_values_json|safe }};
+
+    new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: labels,
+        datasets: [{
+          label: "Consumption (kWh)",
+          data: values,
+          borderColor: "#2563eb",
+          backgroundColor: "rgba(37, 99, 235, 0.08)",
+          borderWidth: 2,
+          pointBackgroundColor: "#2563eb",
+          pointRadius: 3,
+          pointHoverRadius: 6,
+          fill: true,
+          tension: 0.3
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return ` ${context.parsed.y} kWh`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false }
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: "rgba(226, 232, 240, 0.6)" },
+            title: { display: true, text: "kWh" }
+          }
+        }
+      }
+    });
+  });
+</script>
+{% endif %}
+{% endblock %}
+

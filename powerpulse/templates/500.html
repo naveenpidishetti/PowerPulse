@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Internal Server Error (500) — PowerPulse{% endblock %}
+
+{% block content %}
+<div class="container py-5 my-5 text-center">
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+      <div class="card p-5 border-0 shadow-sm">
+        <div class="display-1 text-danger fw-bold mb-3">
+          <i class="bi bi-shield-slash-fill"></i> 500
+        </div>
+        <h2 class="fw-bold mb-3">Internal Server Error</h2>
+        <p class="text-secondary mb-4">
+          An unexpected error occurred while processing power calculations or serving this request. Our telemetry has logged the issue.
+        </p>
+        <div class="d-flex justify-content-center gap-3">
+          <a href="{% url 'core:landing' %}" class="btn btn-outline-secondary rounded-pill px-4">
+            <i class="bi bi-house-door me-1"></i> Home
+          </a>
+          {% if user.is_authenticated %}
+          <a href="{% url 'core:dashboard' %}" class="btn btn-primary rounded-pill px-4">
+            <i class="bi bi-speedometer2 me-1"></i> Dashboard
+          </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

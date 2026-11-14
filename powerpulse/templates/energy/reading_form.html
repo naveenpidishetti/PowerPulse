@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} — PowerPulse{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-md-7 col-lg-6">
+      <div class="card p-4 shadow-sm border-0">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h4 class="fw-bold mb-0">{{ title }}</h4>
+          <a href="{% url 'energy:reading_list' %}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+            Back to list
+          </a>
+        </div>
+
+        <form method="post">
+          {% csrf_token %}
+
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger py-2 small mb-3">
+              {% for err in form.non_field_errors %}{{ err }}{% endfor %}
+            </div>
+          {% endif %}
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Reading Date *</label>
+            {{ form.reading_date }}
+            {% for err in form.reading_date.errors %}<div class="text-danger small">{{ err }}</div>{% endfor %}
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Previous Meter Reading</label>
+              {{ form.previous_reading }}
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Current Meter Reading</label>
+              {{ form.current_reading }}
+            </div>
+            <div class="col-12">
+              <small class="text-secondary">If meter readings are entered, Net Consumption is calculated automatically.</small>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Net Consumption (kWh)</label>
+            {{ form.consumption_kwh }}
+            {% for err in form.consumption_kwh.errors %}<div class="text-danger small">{{ err }}</div>{% endfor %}
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Tariff Rate (₹ per kWh)</label>
+              {{ form.tariff_per_unit }}
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Building / Facility Name</label>
+              {{ form.building_name }}
+            </div>
+          </div>
+
+          <div class="d-grid mt-4">
+            <button type="submit" class="btn btn-primary rounded-pill py-2 fw-semibold">
+              <i class="bi bi-check2-circle me-1"></i> Save Reading Record
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

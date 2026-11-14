@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics Overview — PowerPulse{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-4 py-4">
+  <div class="d-md-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold mb-1">Energy Analytics & Patterns</h2>
+      <p class="text-secondary small mb-0">Deep dive into daily load profiles, weekday distributions, and cost trends.</p>
+    </div>
+    <div class="d-flex gap-2 mt-3 mt-md-0">
+      <a href="{% url 'analytics:export_pdf' %}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+        <i class="bi bi-file-earmark-pdf me-1"></i> Export Audit PDF
+      </a>
+    </div>
+  </div>
+
+  {% if not has_data %}
+    <div class="card p-5 text-center">
+      <i class="bi bi-graph-up text-secondary display-3 mb-3"></i>
+      <h4>No Data for Analytics</h4>
+      <p class="text-secondary small">Seed sample demo data or log meter readings to unlock full interactive charts.</p>
+      <div class="mt-2">
+        <a href="{% url 'energy:seed_demo' %}" class="btn btn-warning rounded-pill px-4 fw-semibold">
+          <i class="bi bi-magic me-1"></i> Seed 90 Days of Demo Data
+        </a>
+      </div>
+    </div>
+  {% else %}
+    <!-- Summary KPIs -->
+    <div class="row g-3 mb-4">
+      <div class="col-sm-6 col-lg-3">
+        <div class="card p-3 stat-card h-100">
+          <span class="text-secondary small fw-semibold text-uppercase">Total Consumed</span>
+          <div class="fs-2 fw-bold text-dark mt-1">{{ total_kwh }} <span class="fs-6 text-muted fw-normal">kWh</span></div>
+          <small class="text-secondary mt-1">Across {{ total_count }} readings</small>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <div class="card p-3 stat-card h-100">
+          <span class="text-secondary small fw-semibold text-uppercase">Average Daily Load</span>
+          <div class="fs-2 fw-bold text-primary mt-1">{{ avg_kwh }} <span class="fs-6 text-muted fw-normal">kWh</span></div>
+          <small class="text-secondary mt-1">Typical daily consumption</small>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <div class="card p-3 stat-card h-100">
+          <span class="text-secondary small fw-semibold text-uppercase">Peak Single-Day Draw</span>
+          <div class="fs-2 fw-bold text-danger mt-1">{{ max_kwh }} <span class="fs-6 text-muted fw-normal">kWh</span></div>
+          <small class="text-secondary mt-1">Min recorded: {{ min_kwh }} kWh</small>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <div class="card p-3 stat-card h-100">
+          <span class="text-secondary small fw-semibold text-uppercase">Cumulative Cost</span>
+          <div class="fs-2 fw-bold text-success mt-1">₹{{ total_cost }}</div>
+          <small class="text-secondary mt-1">Calculated via recorded tariffs</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row g-4 mb-4">
+      <!-- 60-day trend -->
+      <div class="col-lg-8">
+        <div class="card p-4 h-100">
+          <h5 class="fw-bold mb-1">Consumption History (Last 60 Days)</h5>
+          <p class="text-secondary small mb-3">Daily consumption volume and calculated cost over time</p>
+          <div style="position: relative; height: 320px;">
+            <canvas id="trendChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Day of week average bar chart -->
+      <div class="col-lg-4">
+        <div class="card p-4 h-100">
+          <h5 class="fw-bold mb-1">Weekday vs Weekend Profile</h5>
+          <p class="text-secondary small mb-3">Average kWh consumed by day of week</p>
+          <div style="position: relative; height: 320px;">
+            <canvas id="dowChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if has_data %}
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    // 60-day trend chart
+    const trendCtx = document.getElementById("trendChart").getContext("2d");
+    new Chart(trendCtx, {
+      type: "line",
+      data: {
+        labels: {{ chart_dates_json|safe }},
+        datasets: [{
+          label: "Consumption (kWh)",
+          data: {{ chart_kwh_json|safe }},
+          borderColor: "#2563eb",
+          backgroundColor: "rgba(37, 99, 235, 0.08)",
+          borderWidth: 2,
+          pointRadius: 2.5,
+          tension: 0.25,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { beginAtZero: true, title: { display: true, text: "kWh" } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+
+    // Day of week profile chart
+    const dowCtx = document.getElementById("dowChart").getContext("2d");
+    new Chart(dowCtx, {
+      type: "bar",
+      data: {
+        labels: {{ dow_names_json|safe }},
+        datasets: [{
+          label: "Avg Daily kWh",
+          data: {{ dow_averages_json|safe }},
+          backgroundColor: [
+            "#38bdf8", "#38bdf8", "#38bdf8", "#38bdf8", "#38bdf8", "#f59e0b", "#f59e0b"
+          ],
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          y: { beginAtZero: true, title: { display: true, text: "Avg kWh" } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+  });
+</script>
+{% endif %}
+{% endblock %}
+
